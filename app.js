@@ -5,9 +5,21 @@ const mongoose = require('mongoose');
 // initiain express
 const app = express();
 
+// DB Config
+const db = require('./config/keys').MongoURI;
+
+// Connect to Mongo
+mongoose.connect(db, { useNewUrlParser: true })
+    .then(() => console.log('MongoDB Connected...'))
+    .catch(err => console.log(err));
+
 // setting up ejs
 app.use(expressLayouts);
 app.set('view engine', 'ejs');
+
+
+// BodyParser
+app.use(express.urlencoded({ extended: false }));
 
 
 // rendering all the Routes
