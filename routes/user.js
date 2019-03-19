@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
+const passport = require('passport');
 
+
+const User = require('../models/users');
 
 // Login Page
 router.get('/login', (req, res) => res.render('login'));
@@ -39,8 +43,51 @@ router.post('/register', (req, res) => {
             password2 
         })
     }else{
-        res.send('pass');
+            User.findOne({ email: email })
+                .then(user => {
+                    if(user) {
+                        // User exists
+                        errors.push({ msg: 'Email is already registered' });
+                        res.render('register', {
+                            errors,
+                            name,
+                            email,
+                            password,
+                            password2 
+                        })
+                    }else {
+                        const newUser = new User({
+                            name,
+                            email,
+                            password
+                        });
+
+                        bcrypt.genSalt(10, (err, salt) => {
+                            bcrypt.hash(newUser.password, salt, (err, hash) => {
+                                if(err) throw err;
+                                // store the hash in password
+                                newUser.password = hash;
+                                // save the new user
+                                newUser.save()
+                                    // if succes then redirect
+                                    .then(user => {
+                                        req.flash('success_msg', 'You are now registered');
+                                        res.redirect('/user/login');
+                                    })
+                                    .catch(err => console.log(err));
+                            })
+                        })
+                    }
+                });
     }
+});
+
+router.post('/login', (req, res, next) => {
+    passport.authenticate('local', {
+        successRedirect: '/dashboard',
+        failureRedirect: '/user/login',
+        failureFlash: true
+    })(req, res, next);
 });
 
 module.exports = router;
